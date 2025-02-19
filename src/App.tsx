@@ -86,26 +86,26 @@ function App() {
 
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        setLoading(true);
-        const res = await fetch(URL);
-        if (!res.ok) {
-          throw new Error(`Error: ${res.status} ${res.statusText}`);
-        }
-        const stakingData = await res.json();
-        setData(stakingData.result.data.json);
-        setStakers(
-          stakingData.result.data.json.stakers.filter(
-            (staker: { uiStakingPower: number }) => staker.uiStakingPower !== 0
-          )
-        );
-      } catch (err) {
+      /* try { */
+      /* setLoading(true); */
+      const res = await fetch(URL);
+      if (!res.ok) {
+        throw new Error(`Error: ${res.status} ${res.statusText}`);
+      }
+      const stakingData = await res.json();
+      setData(stakingData.result.data.json);
+      setStakers(
+        stakingData.result.data.json.stakers.filter(
+          (staker: { uiStakingPower: number }) => staker.uiStakingPower !== 0
+        )
+      );
+      /*} catch (err) {
         setError(
           err instanceof Error ? err.message : "An unknown error occurred"
         );
       } finally {
         setLoading(false);
-      }
+      } */
     };
 
     fetchData();
