@@ -109,6 +109,11 @@ function App() {
     };
 
     fetchData();
+
+    const intervalId = setInterval(fetchData, 30 * 60000); // Run every 30 minutes
+
+    // Clean up the interval when the component unmounts
+    return () => clearInterval(intervalId);
   }, []);
 
   useEffect(() => {
