@@ -51,8 +51,7 @@ function App() {
       }[]
     | null
   >(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  /* const [loading, setLoading] = useState(true); */
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage] = useState<number>(15);
   const [paginatedData, setPaginatedData] = useState<
@@ -154,9 +153,6 @@ function App() {
       color: "#2563eb",
     },
   } satisfies ChartConfig;
-
-  if (loading) return <h1>Loading...</h1>;
-  if (error) return <h1>Error: {error}</h1>;
 
   return (
     <div className="justify-center pt-8">
