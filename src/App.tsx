@@ -20,7 +20,12 @@ import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
 import { Card } from "./components/ui/card";
 
-import { ChartContainer, type ChartConfig } from "./components/ui/chart";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "./components/ui/chart";
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 
 const URL =
@@ -163,6 +168,7 @@ function App() {
               <YAxis dataKey="stakers" />
               <CartesianGrid vertical={false} />
               <Line dataKey="stakers" fill="var(--color-stakers)" radius={4} />
+              <ChartTooltip content={<ChartTooltipContent />} />
             </LineChart>
           </ChartContainer>
         </Card>
