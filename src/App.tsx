@@ -1,4 +1,6 @@
 import { ChangeEvent, useEffect, useState } from "react";
+import { SpeedInsights } from "@vercel/speed-insights/react";
+
 import {
   Table,
   TableBody,
@@ -335,6 +337,7 @@ function App() {
           </Button>
         </Pagination>
       </div>
+      <SpeedInsights />
     </div>
   );
 }
