@@ -54,7 +54,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [itemsPerPage] = useState<number>(20);
+  const [itemsPerPage] = useState<number>(15);
   const [paginatedData, setPaginatedData] = useState<
     | {
         wallet: string;
@@ -159,12 +159,14 @@ function App() {
   if (error) return <h1>Error: {error}</h1>;
 
   return (
-    <div className="justify-center">
-      <div className=" w-[90%] mx-auto flex flex-row items-center justify justify-between">
-        <Card className="flex w-[40%]">
+    <div className="justify-center pt-8">
+      <div className="w-[90%] mx-auto flex flex-row items-start justify-between gap-4">
+        {/* Chart Card (Fixed Height) */}
+        <Card className="flex flex-col items-center w-[35%] p-4">
+          <h1 className="text-lg font-semibold mb-2">Staking History</h1>
           <ChartContainer
             config={chartConfig}
-            className="mx-auto flex flex-row items-center justify min-h-[20%] w-[80%]"
+            className="w-full h-[250px] overflow-hidden"
           >
             <LineChart accessibilityLayer data={activeStakers}>
               <XAxis dataKey="date" />
@@ -175,39 +177,58 @@ function App() {
             </LineChart>
           </ChartContainer>
         </Card>
-        <Card className="w-[25%] h-[0%]">
-          <h1>Amount Staked:</h1>
-          <h1>{data?.totalUIStaked}</h1>
-          <h1>Total Staking Power:</h1>
-          <h1>{data?.totalUIStakingPower}</h1>
-          <h1>Total Stakers:</h1>
-          <h1>{stakers?.length}</h1>
+
+        {/* Stats Card */}
+        <Card className="w-[30%] flex flex-col items-center p-5">
+          <h1 className="text-lg font-semibold">Amount Staked:</h1>
+          <p className="text-xl font-bold">
+            {parseInt(data?.totalUIStaked as unknown as string) + " $ME"}
+          </p>
+          <h1 className="text-lg font-semibold mt-2">Total Staking Power:</h1>
+          <p className="text-xl font-bold">
+            {parseInt(data?.totalUIStakingPower as unknown as string)}
+          </p>
+          <h1 className="text-lg font-semibold mt-2">Total Stakers:</h1>
+          <p className="text-xl font-bold">{stakers?.length}</p>
         </Card>
-        <Card className="w-[25%]">
-          <h1>Staking Thresholds</h1>
-          <h1>1%</h1>
-          <h1>
-            {stakers &&
-              Math.ceil(
-                stakers[Math.ceil(stakers.length * 0.01)].uiStakingPower
-              )}
+
+        {/* Staking Thresholds Card */}
+        <Card className="w-[30%] flex flex-col items-center p-5">
+          <h1 className="text-xl font-semibold mb-2">
+            Staking Power Thresholds
           </h1>
-          <h1>5%</h1>
-          <h1>
-            {stakers &&
-              Math.ceil(
-                stakers[Math.ceil(stakers.length * 0.05)].uiStakingPower
-              )}
-          </h1>
-          <h1>10%</h1>
-          <h1>
-            {stakers &&
-              Math.ceil(
-                stakers[Math.ceil(stakers.length * 0.1)].uiStakingPower
-              )}
-          </h1>
+          <div className="space-y-2 text-center">
+            <div>
+              <h2 className="text-md font-medium">Top 1%:</h2>
+              <p className="text-lg font-bold">
+                {stakers &&
+                  Math.ceil(
+                    stakers[Math.ceil(stakers.length * 0.01)].uiStakingPower
+                  ) + " Staking Power"}
+              </p>
+            </div>
+            <div>
+              <h2 className="text-md font-medium"> Top 5%</h2>
+              <p className="text-lg font-bold">
+                {stakers &&
+                  Math.ceil(
+                    stakers[Math.ceil(stakers.length * 0.05)].uiStakingPower
+                  ) + " Staking Power"}
+              </p>
+            </div>
+            <div>
+              <h2 className="text-md font-medium">Top 10% ($ME MAFIA)</h2>
+              <p className="text-lg font-bold">
+                {stakers &&
+                  Math.ceil(
+                    stakers[Math.ceil(stakers.length * 0.1)].uiStakingPower
+                  ) + " Staking Power"}
+              </p>
+            </div>
+          </div>
         </Card>
       </div>
+
       <div className="w-[80%] mx-auto flex flex-col items-center">
         <Table>
           <TableCaption>{`Data updated at: ${new Date(data?.ts as string)
