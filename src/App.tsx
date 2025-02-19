@@ -21,33 +21,50 @@ import { Input } from "./components/ui/input";
 import { Card } from "./components/ui/card";
 
 import { ChartContainer, type ChartConfig } from "./components/ui/chart";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Line,
-  LineChart,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 
 const URL =
   "api/api/trpc/staking.getStakerSnapshot?input=%7B%22json%22%3A%7B%20%22token%22%3A%20%22MEFNBXixkEbait3xn9bkm8WsJzXtVsaJEn4c8Sam21u%22,%20%22ns%22%3A%20%22acAvyneD7adS3yrXUp41c1AuoYoYRhnjeAWH9stbdTf%22%7D%7D";
 
 function App() {
-  const [data, setData] = useState<any>(null);
-  const [stakers, setStakers] = useState<any>(null);
+  const [data, setData] = useState<{
+    ts: string;
+    totalUIStaked: number;
+    totalUIStakingPower: number;
+  } | null>(null);
+  const [stakers, setStakers] = useState<
+    | {
+        wallet: string;
+        uiStakingPower: number;
+        uiAmount: number;
+        startTs: number;
+        endTs: number;
+        durateion: number;
+      }[]
+    | null
+  >(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage] = useState<number>(20);
-  const [paginatedData, setPaginatedData] = useState<any>(null);
+  const [paginatedData, setPaginatedData] = useState<
+    | {
+        wallet: string;
+        uiStakingPower: number;
+        uiAmount: number;
+        startTs: number;
+        endTs: number;
+        durateion: number;
+      }[]
+    | null
+  >(null);
   const [totalPages, setTotalPages] = useState<number>(0);
   const [activeStakers, setActiveStakers] = useState<
     { stakers: number; date: string }[]
   >([
     {
       stakers: 0,
+      date: "19.Feb",
     },
   ]);
 
@@ -72,7 +89,7 @@ function App() {
         setData(stakingData.result.data.json);
         setStakers(
           stakingData.result.data.json.stakers.filter(
-            (staker) => staker.uiStakingPower !== 0
+            (staker: { uiStakingPower: number }) => staker.uiStakingPower !== 0
           )
         );
       } catch (err) {
@@ -151,35 +168,40 @@ function App() {
         </Card>
         <Card className="w-[25%] h-[0%]">
           <h1>Amount Staked:</h1>
-          <h1>{data.totalUIStaked}</h1>
+          <h1>{data?.totalUIStaked}</h1>
           <h1>Total Staking Power:</h1>
-          <h1>{data.totalUIStakingPower}</h1>
+          <h1>{data?.totalUIStakingPower}</h1>
           <h1>Total Stakers:</h1>
-          <h1>{stakers.length}</h1>
+          <h1>{stakers?.length}</h1>
         </Card>
         <Card className="w-[25%]">
           <h1>Staking Thresholds</h1>
           <h1>1%</h1>
           <h1>
-            {Math.ceil(
-              stakers[Math.ceil(stakers.length * 0.01)].uiStakingPower
-            )}
+            {stakers &&
+              Math.ceil(
+                stakers[Math.ceil(stakers.length * 0.01)].uiStakingPower
+              )}
           </h1>
           <h1>5%</h1>
           <h1>
-            {Math.ceil(
-              stakers[Math.ceil(stakers.length * 0.05)].uiStakingPower
-            )}
+            {stakers &&
+              Math.ceil(
+                stakers[Math.ceil(stakers.length * 0.05)].uiStakingPower
+              )}
           </h1>
           <h1>10%</h1>
           <h1>
-            {Math.ceil(stakers[Math.ceil(stakers.length * 0.1)].uiStakingPower)}
+            {stakers &&
+              Math.ceil(
+                stakers[Math.ceil(stakers.length * 0.1)].uiStakingPower
+              )}
           </h1>
         </Card>
       </div>
       <div className="w-[80%] mx-auto flex flex-col items-center">
         <Table>
-          <TableCaption>{`Data updated at: ${new Date(data.ts)
+          <TableCaption>{`Data updated at: ${new Date(data?.ts as string)
             .toUTCString()
             .replace("GMT", "UTC")}`}</TableCaption>
           <TableHeader>
@@ -203,7 +225,6 @@ function App() {
                     uiAmount: number;
                     startTs: number;
                     endTs: number;
-                    duration: number;
                   },
                   index: number
                 ) => {
