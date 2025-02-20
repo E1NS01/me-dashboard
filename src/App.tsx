@@ -35,11 +35,6 @@ const URL =
   "api/api/trpc/staking.getStakerSnapshot?input=%7B%22json%22%3A%7B%20%22token%22%3A%20%22MEFNBXixkEbait3xn9bkm8WsJzXtVsaJEn4c8Sam21u%22,%20%22ns%22%3A%20%22acAvyneD7adS3yrXUp41c1AuoYoYRhnjeAWH9stbdTf%22%7D%7D";
 
 function App() {
-  const [data, setData] = useState<{
-    ts: string;
-    totalUIStaked: number;
-    totalUIStakingPower: number;
-  } | null>(null);
   const [stakers, setStakers] = useState<
     | {
         wallet: string;
@@ -66,14 +61,18 @@ function App() {
     | null
   >(null);
   const [totalPages, setTotalPages] = useState<number>(0);
-  const [activeStakers, setActiveStakers] = useState<
-    { stakers: number; date: string }[]
-  >([
-    {
-      stakers: 0,
-      date: "19.Feb",
-    },
-  ]);
+
+  const [date, setDate] = useState<string>(Date.now().toString());
+  const [data, setData] = useState<
+    | {
+        id: number;
+        timestamp: string;
+        staker: number;
+        stakingPower: number;
+        stakedME: number;
+      }[]
+    | null
+  >(null);
 
   const [goToSite, setGoToSite] = useState<number>(1);
 
@@ -85,15 +84,23 @@ function App() {
   }, [stakers, itemsPerPage, startIndex]);
 
   useEffect(() => {
+    const fetchStakingData = async () => {
+      const res = await fetch("/staking/staking");
+      const apiData = await res.json();
+
+      setDate(apiData[0].timestamp);
+      setData(apiData);
+    };
+    fetchStakingData();
+  }, []);
+
+  useEffect(() => {
     const fetchData = async () => {
-      /* try { */
-      /* setLoading(true); */
       const res = await fetch(URL);
       if (!res.ok) {
         throw new Error(`Error: ${res.status} ${res.statusText}`);
       }
       const stakingData = await res.json();
-      setData(stakingData.result.data.json);
       setStakers(
         stakingData.result.data.json.stakers.filter(
           (staker: { uiStakingPower: number }) => staker.uiStakingPower !== 0
@@ -115,16 +122,6 @@ function App() {
     // Clean up the interval when the component unmounts
     return () => clearInterval(intervalId);
   }, []);
-
-  useEffect(() => {
-    if (stakers) {
-      setActiveStakers([
-        { stakers: 50112, date: "17. Feb" },
-        { stakers: 51063, date: "18. Feb" },
-        { stakers: stakers.length, date: "19. Feb" },
-      ]);
-    }
-  }, [stakers]);
 
   const createUtcDate = (unixDate: number): string => {
     const date = new Date(unixDate * 1000).toUTCString().replace("GMT", "UTC");
@@ -152,49 +149,116 @@ function App() {
     return Math.floor((endTimestamp * 1000 - startTimestamp * 1000) / msInDay);
   };
 
-  const chartConfig = {
+  const stakerConfig = {
     stakers: {
       label: "Active Staker",
       color: "#2563eb",
     },
   } satisfies ChartConfig;
 
+  const stakingConfig = {
+    stakedME: {
+      label: "Staked $ME",
+      color: "#2563eb",
+    },
+    stakingPower: {
+      label: "Staking Power",
+      color: "#2563eb",
+    },
+  } satisfies ChartConfig;
+
   return (
     <div className="justify-center pt-8">
-      <div className="w-[90%] mx-auto flex flex-row items-start justify-between gap-4">
+      <div className="w-[90%] mx-auto flex flex-row items-start justify-between gap-4 mb-8">
         {/* Chart Card (Fixed Height) */}
-        <Card className="flex flex-col items-center w-[35%] p-4">
-          <h1 className="text-lg font-semibold mb-2">Staking History</h1>
+        <Card className="flex flex-col items-center w-[40%] p-4">
+          <h1 className="text-lg font-semibold mb-2">Active Staker History</h1>
           <ChartContainer
-            config={chartConfig}
-            className="w-full h-[250px] overflow-hidden"
+            config={stakerConfig}
+            className="w-full h-[200px] overflow-hidden"
           >
-            <LineChart accessibilityLayer data={activeStakers}>
-              <XAxis dataKey="date" />
-              <YAxis dataKey="stakers" />
+            <LineChart accessibilityLayer data={data ? data : undefined}>
+              <XAxis dataKey="timestamp" />
+              <YAxis dataKey="staker" />
               <CartesianGrid vertical={false} />
-              <Line dataKey="stakers" fill="var(--color-stakers)" radius={4} />
+              <Line dataKey="staker" fill="var(--color-staker)" radius={4} />
               <ChartTooltip content={<ChartTooltipContent />} />
             </LineChart>
           </ChartContainer>
         </Card>
+        <Card className="flex flex-col items-center w-[40%] p-4">
+          <h1 className="text-lg font-semibold mb-2">$ME Staked</h1>
+          <ChartContainer
+            config={stakingConfig}
+            className="w-full h-[200px] overflow-hidden"
+          >
+            <LineChart accessibilityLayer data={data ? data : undefined}>
+              <XAxis dataKey="timestamp" />
+              <YAxis
+                domain={[10000000, 30000000]}
+                tickFormatter={(value) => `${value / 1e6}M`}
+              />
 
+              {/* //<YAxis yAxisId="right" orientation="right" /> */}
+              <CartesianGrid vertical={false} />
+              <Line
+                dataKey="stakedME"
+                fill="var(--color-stakedMe)"
+                radius={4}
+                /* yAxisId={"left"} */
+              />
+              <ChartTooltip content={<ChartTooltipContent />} />
+            </LineChart>
+          </ChartContainer>
+        </Card>
+        <Card className="flex flex-col items-center w-[40%] p-4">
+          <h1 className="text-lg font-semibold mb-2">Staking Power</h1>
+          <ChartContainer
+            config={stakingConfig}
+            className="w-full h-[200px] overflow-hidden"
+          >
+            <LineChart accessibilityLayer data={data ? data : undefined}>
+              <XAxis dataKey="timestamp" />
+              <YAxis
+                scale={"log"}
+                domain={[100000000, 300000000]}
+                tickFormatter={(value) => `${value / 1e6}M`}
+              />
+
+              {/* //<YAxis yAxisId="right" orientation="right" /> */}
+              <CartesianGrid vertical={false} />
+
+              <Line
+                dataKey="stakingPower"
+                fill="var(--color-stakingPower)"
+                radius={4}
+                /* yAxisId={"right"} */
+              />
+
+              <ChartTooltip content={<ChartTooltipContent />} />
+            </LineChart>
+          </ChartContainer>
+        </Card>
+      </div>
+      <div className="w-[70%] mx-auto flex flex-row items-start justify-between gap-4 mb-8">
         {/* Stats Card */}
-        <Card className="w-[30%] flex flex-col items-center p-5">
+        <Card className="w-[45%] flex flex-col items-center p-5">
           <h1 className="text-lg font-semibold">Amount Staked:</h1>
           <p className="text-xl font-bold">
-            {parseInt(data?.totalUIStaked as unknown as string) + " $ME"}
+            {data ? data[0].stakedME + " $ME" : "loading..."}
           </p>
           <h1 className="text-lg font-semibold mt-2">Total Staking Power:</h1>
           <p className="text-xl font-bold">
-            {parseInt(data?.totalUIStakingPower as unknown as string)}
+            {data ? data[0].stakingPower : "loading..."}
           </p>
           <h1 className="text-lg font-semibold mt-2">Total Stakers:</h1>
-          <p className="text-xl font-bold">{stakers?.length}</p>
+          <p className="text-xl font-bold">
+            {data ? data[0].staker : "loading..."}
+          </p>
         </Card>
 
         {/* Staking Thresholds Card */}
-        <Card className="w-[30%] flex flex-col items-center p-5">
+        <Card className="w-[45%] flex flex-col items-center p-5">
           <h1 className="text-xl font-semibold mb-2">
             Staking Power Thresholds
           </h1>
@@ -202,39 +266,52 @@ function App() {
             <div>
               <h2 className="text-md font-medium">Top 1%:</h2>
               <p className="text-lg font-bold">
-                {stakers &&
-                  Math.ceil(
-                    stakers[Math.ceil(stakers.length * 0.01)].uiStakingPower
-                  ) + " Staking Power"}
+                {stakers
+                  ? Math.ceil(
+                      stakers[Math.ceil(stakers.length * 0.01)].uiStakingPower
+                    ) + " Staking Power"
+                  : "loading..."}
               </p>
             </div>
             <div>
               <h2 className="text-md font-medium"> Top 5%</h2>
               <p className="text-lg font-bold">
-                {stakers &&
-                  Math.ceil(
-                    stakers[Math.ceil(stakers.length * 0.05)].uiStakingPower
-                  ) + " Staking Power"}
+                {stakers
+                  ? Math.ceil(
+                      stakers[Math.ceil(stakers.length * 0.05)].uiStakingPower
+                    ) + " Staking Power"
+                  : "loading..."}
               </p>
             </div>
             <div>
               <h2 className="text-md font-medium">Top 10% ($ME MAFIA)</h2>
               <p className="text-lg font-bold">
-                {stakers &&
-                  Math.ceil(
-                    stakers[Math.ceil(stakers.length * 0.1)].uiStakingPower
-                  ) + " Staking Power"}
+                {stakers
+                  ? Math.ceil(
+                      stakers[Math.ceil(stakers.length * 0.1)].uiStakingPower
+                    ) + " Staking Power"
+                  : "loading..."}
               </p>
             </div>
           </div>
         </Card>
       </div>
 
-      <div className="w-[80%] mx-auto flex flex-col items-center">
+      <div className="w-[80%] mx-auto flex flex-col items-center mb-8">
         <Table>
-          <TableCaption>{`Data updated at: ${new Date(data?.ts as string)
-            .toUTCString()
-            .replace("GMT", "UTC")}`}</TableCaption>
+          <TableCaption>{`Data updated at: ${new Date(date).toLocaleDateString(
+            "en-GB",
+            {
+              day: "2-digit",
+              month: "long",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+              timeZone: "UTC",
+              timeZoneName: "short",
+            }
+          )}`}</TableCaption>
           <TableHeader>
             <TableRow>
               <TableHead>Rank</TableHead>
@@ -362,6 +439,7 @@ function App() {
       </div>
       <SpeedInsights />
       <Analytics />
+      <div className="flex justify-center">Made by E1NS</div>
     </div>
   );
 }
