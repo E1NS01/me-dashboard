@@ -85,7 +85,7 @@ function App() {
 
   useEffect(() => {
     const fetchStakingData = async () => {
-      const res = await fetch("/staking/staking");
+      const res = await fetch("https://me-stake-backend.onrender.com/staking");
       const apiData = await res.json();
 
       setDate(apiData[0].timestamp);
