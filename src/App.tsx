@@ -73,6 +73,9 @@ function App() {
       }[]
     | null
   >(null);
+  const [activeStakerRange, setActiveStakerRange] = useState<number[]>([0, 0]);
+  const [stakedMERange, setStakedMERange] = useState<number[]>([0, 0]);
+  const [stakingPowerRange, setStakingPowerRange] = useState<number[]>([0, 0]);
 
   const [goToSite, setGoToSite] = useState<number>(1);
 
@@ -94,6 +97,9 @@ function App() {
       setData(apiData);
     };
     fetchStakingData();
+
+    const intervalId = setInterval(fetchStakingData, 30 * 60000);
+    return () => clearInterval(intervalId);
   }, []);
 
   useEffect(() => {
@@ -108,22 +114,37 @@ function App() {
           (staker: { uiStakingPower: number }) => staker.uiStakingPower !== 0
         )
       );
-      /*} catch (err) {
-        setError(
-          err instanceof Error ? err.message : "An unknown error occurred"
-        );
-      } finally {
-        setLoading(false);
-      } */
     };
 
     fetchData();
 
-    const intervalId = setInterval(fetchData, 30 * 60000); // Run every 30 minutes
-
-    // Clean up the interval when the component unmounts
+    const intervalId = setInterval(fetchData, 30 * 60000);
     return () => clearInterval(intervalId);
   }, []);
+
+  useEffect(() => {
+    if (!data) return;
+    const minMaxValues = {
+      staker: {
+        min: Math.floor(Math.min(...data.map((d) => d.staker)) * 0.9),
+        max: Math.floor(Math.max(...data.map((d) => d.staker)) * 1.1),
+      },
+      stakedME: {
+        min: Math.floor(Math.min(...data.map((d) => d.stakedME)) * 0.9),
+        max: Math.floor(Math.max(...data.map((d) => d.stakedME)) * 1.1),
+      },
+      stakingPower: {
+        min: Math.floor(Math.min(...data.map((d) => d.stakingPower)) * 0.9),
+        max: Math.floor(Math.max(...data.map((d) => d.stakingPower)) * 1.1),
+      },
+    };
+    setActiveStakerRange([minMaxValues.staker.min, minMaxValues.staker.max]);
+    setStakingPowerRange([
+      minMaxValues.stakingPower.min,
+      minMaxValues.stakingPower.max,
+    ]);
+    setStakedMERange([minMaxValues.stakedME.min, minMaxValues.stakedME.max]);
+  }, [data]);
 
   const createUtcDate = (unixDate: number): string => {
     const date = new Date(unixDate * 1000).toUTCString().replace("GMT", "UTC");
@@ -181,7 +202,7 @@ function App() {
           >
             <LineChart accessibilityLayer data={data ? data : undefined}>
               <XAxis dataKey="timestamp" />
-              <YAxis dataKey="staker" domain={[40000, 50000]} />
+              <YAxis dataKey="staker" domain={activeStakerRange} />
               <CartesianGrid vertical={false} />
               <Line dataKey="staker" fill="var(--color-staker)" radius={4} />
               <ChartTooltip content={<ChartTooltipContent />} />
@@ -197,8 +218,8 @@ function App() {
             <LineChart accessibilityLayer data={data ? data : undefined}>
               <XAxis dataKey="timestamp" />
               <YAxis
-                domain={[10000000, 30000000]}
-                tickFormatter={(value) => `${value / 1e6}M`}
+                domain={stakedMERange}
+                tickFormatter={(value) => `${Math.floor(value / 1e6)}M`}
               />
 
               {/* //<YAxis yAxisId="right" orientation="right" /> */}
@@ -222,9 +243,8 @@ function App() {
             <LineChart accessibilityLayer data={data ? data : undefined}>
               <XAxis dataKey="timestamp" />
               <YAxis
-                scale={"log"}
-                domain={[100000000, 300000000]}
-                tickFormatter={(value) => `${value / 1e6}M`}
+                domain={stakingPowerRange}
+                tickFormatter={(value) => `${Math.floor(value / 1e6)}M`}
               />
 
               {/* //<YAxis yAxisId="right" orientation="right" /> */}
@@ -242,7 +262,7 @@ function App() {
           </ChartContainer>
         </Card>
       </div>
-      <div className="w-[70%] mx-auto flex flex-row items-start justify-between gap-4 mb-8">
+      <div className="w-[70%] mx-auto flex flex-row items-center justify-between gap-4 mb-8">
         {/* Stats Card */}
         <Card className="w-[45%] flex flex-col items-center p-5">
           <h1 className="text-lg font-semibold">Amount Staked:</h1>
@@ -299,8 +319,8 @@ function App() {
         </Card>
       </div>
 
-      <div className="w-[80%] mx-auto flex flex-col items-center mb-8">
-        <Table>
+      <div className="w-[90%] mx-auto flex flex-col items-center mb-8 overflow-x-auto">
+        <Table className="min-w-[600px] sm:min-w-full">
           <TableCaption>{`Data updated at: ${new Date(date).toLocaleDateString(
             "en-GB",
             {
@@ -317,131 +337,127 @@ function App() {
           <TableHeader>
             <TableRow>
               <TableHead>Rank</TableHead>
-              <TableHead className="">Wallet</TableHead>
+              <TableHead>Wallet</TableHead>
               <TableHead>Staking Power</TableHead>
               <TableHead>Amount Staked</TableHead>
-              <TableHead>Staked At</TableHead>
-              <TableHead>Unlocks At</TableHead>
-              <TableHead className="">Duration</TableHead>
+              <TableHead className="hidden md:table-cell">Staked At</TableHead>
+              <TableHead className="hidden md:table-cell">Unlocks At</TableHead>
+              <TableHead className="hidden sm:table-cell">Duration</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {paginatedData &&
-              paginatedData.map(
-                (
-                  staker: {
-                    wallet: string;
-                    uiStakingPower: number;
-                    uiAmount: number;
-                    startTs: number;
-                    endTs: number;
-                  },
-                  index: number
-                ) => {
-                  return (
-                    <TableRow key={index}>
-                      <TableCell>
-                        {index + 1 + (currentPage - 1) * itemsPerPage === 1
-                          ? "👑"
-                          : index + 1 + (currentPage - 1) * itemsPerPage}
-                      </TableCell>
-                      <TableCell className="">{staker.wallet}</TableCell>
-                      <TableCell>{staker.uiStakingPower}</TableCell>
-                      <TableCell>{staker.uiAmount}</TableCell>
-                      <TableCell className="">
-                        {createUtcDate(staker.startTs)}
-                      </TableCell>
-                      <TableCell className="">
-                        {createUtcDate(staker.endTs)}
-                      </TableCell>
-                      <TableCell className="">
-                        {formatTimeDifference(staker.startTs, staker.endTs)}{" "}
-                        days
-                      </TableCell>
-                    </TableRow>
-                  );
-                }
-              )}
+            {paginatedData?.map(
+              (
+                staker: {
+                  wallet: string;
+                  uiStakingPower: number;
+                  uiAmount: number;
+                  startTs: number;
+                  endTs: number;
+                },
+                index: number
+              ) => (
+                <TableRow key={index}>
+                  <TableCell>
+                    {index + 1 + (currentPage - 1) * itemsPerPage === 1
+                      ? "👑"
+                      : index + 1 + (currentPage - 1) * itemsPerPage}
+                  </TableCell>
+                  <TableCell>
+                    <span className="md:hidden">
+                      {staker.wallet.slice(0, 4)}...{staker.wallet.slice(-4)}
+                    </span>
+                    <span className="hidden md:inline">{staker.wallet}</span>
+                  </TableCell>
+                  <TableCell>{staker.uiStakingPower}</TableCell>
+                  <TableCell>{staker.uiAmount}</TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    {createUtcDate(staker.startTs)}
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    {createUtcDate(staker.endTs)}
+                  </TableCell>
+                  <TableCell className="hidden sm:table-cell">
+                    {formatTimeDifference(staker.startTs, staker.endTs)} days
+                  </TableCell>
+                </TableRow>
+              )
+            )}
           </TableBody>
         </Table>
-        <Pagination className="mt-4 flex justify-center">
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious
-                className="cursor-pointer"
-                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                isActive={currentPage !== 1}
-                size={"default"}
-              />
-            </PaginationItem>
+      </div>
+      <Pagination className="mt-4 flex justify-center">
+        <PaginationContent>
+          <PaginationItem>
+            <PaginationPrevious
+              className="cursor-pointer"
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              isActive={currentPage !== 1}
+              size={"default"}
+            />
+          </PaginationItem>
 
-            {/* Always show first page */}
-            <PaginationItem>
-              <Button
-                variant={currentPage === 1 ? "default" : "outline"}
-                onClick={() => setCurrentPage(1)}
-              >
-                1
-              </Button>
-            </PaginationItem>
+          <PaginationItem>
+            <Button
+              variant={currentPage === 1 ? "default" : "outline"}
+              onClick={() => setCurrentPage(1)}
+            >
+              1
+            </Button>
+          </PaginationItem>
 
-            {/* Show Ellipsis if currentPage > 4 (indicating skipped pages) */}
-            {currentPage > 4 && <PaginationEllipsis />}
+          {currentPage > 4 && <PaginationEllipsis />}
 
-            {/* Generate range of 5 pages centered on currentPage */}
-            {Array.from({ length: 5 }, (_, i) => currentPage - 2 + i)
-              .filter((page) => page > 1 && page < totalPages) // Ensure valid range
-              .map((page) => (
-                <PaginationItem key={page}>
-                  <Button
-                    variant={page === currentPage ? "default" : "outline"}
-                    onClick={() => setCurrentPage(page)}
-                  >
-                    {page}
-                  </Button>
-                </PaginationItem>
-              ))}
-
-            {/* Show Ellipsis if there are hidden pages before the last page */}
-            {currentPage < totalPages - 3 && <PaginationEllipsis />}
-
-            {/* Always show last page */}
-            {totalPages > 1 && (
-              <PaginationItem>
+          {Array.from({ length: 5 }, (_, i) => currentPage - 2 + i)
+            .filter((page) => page > 1 && page < totalPages)
+            .map((page) => (
+              <PaginationItem key={page}>
                 <Button
-                  variant={currentPage === totalPages ? "default" : "outline"}
-                  onClick={() => setCurrentPage(totalPages)}
+                  variant={page === currentPage ? "default" : "outline"}
+                  onClick={() => setCurrentPage(page)}
                 >
-                  {totalPages}
+                  {page}
                 </Button>
               </PaginationItem>
-            )}
+            ))}
 
+          {currentPage < totalPages - 3 && <PaginationEllipsis />}
+
+          {totalPages > 1 && (
             <PaginationItem>
-              <PaginationNext
-                className="cursor-pointer"
-                onClick={() =>
-                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                }
-                isActive={currentPage !== totalPages}
-                size={"default"}
-              />
+              <Button
+                variant={currentPage === totalPages ? "default" : "outline"}
+                onClick={() => setCurrentPage(totalPages)}
+              >
+                {totalPages}
+              </Button>
             </PaginationItem>
-          </PaginationContent>
-          <Input
-            className="ml-4 w-16"
-            onChange={handlePageNavigationChange}
-            value={goToSite || ""}
-            type="number"
-          />
-          <Button className="ml-4" onClick={handlePageNavigationSubmit}>
-            Go to page
-          </Button>
-        </Pagination>
-      </div>
+          )}
+
+          <PaginationItem>
+            <PaginationNext
+              className="cursor-pointer"
+              onClick={() =>
+                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+              }
+              isActive={currentPage !== totalPages}
+              size={"default"}
+            />
+          </PaginationItem>
+        </PaginationContent>
+        <Input
+          className="ml-4 w-16"
+          onChange={handlePageNavigationChange}
+          value={goToSite || ""}
+          type="number"
+        />
+        <Button className="ml-4" onClick={handlePageNavigationSubmit}>
+          Go to page
+        </Button>
+      </Pagination>
+
       <SpeedInsights />
       <Analytics />
-      <div className="flex justify-center">Made by E1NS</div>
     </div>
   );
 }
