@@ -48,7 +48,7 @@ function App() {
   >(null);
   /* const [loading, setLoading] = useState(true); */
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [itemsPerPage] = useState<number>(15);
+  const [itemsPerPage] = useState<number>(10);
   const [paginatedData, setPaginatedData] = useState<
     | {
         wallet: string;
@@ -85,10 +85,12 @@ function App() {
 
   useEffect(() => {
     const fetchStakingData = async () => {
-      const res = await fetch("https://me-stake-backend.onrender.com/staking");
+      const res = await fetch(
+        "https://existing-linn-me-dashboard-94f01c3a.koyeb.app/staking"
+      );
       const apiData = await res.json();
 
-      setDate(apiData[0].timestamp);
+      setDate(apiData[apiData.length - 1].timestamp);
       setData(apiData);
     };
     fetchStakingData();
@@ -179,7 +181,7 @@ function App() {
           >
             <LineChart accessibilityLayer data={data ? data : undefined}>
               <XAxis dataKey="timestamp" />
-              <YAxis dataKey="staker" />
+              <YAxis dataKey="staker" domain={[40000, 50000]} />
               <CartesianGrid vertical={false} />
               <Line dataKey="staker" fill="var(--color-staker)" radius={4} />
               <ChartTooltip content={<ChartTooltipContent />} />
@@ -245,15 +247,15 @@ function App() {
         <Card className="w-[45%] flex flex-col items-center p-5">
           <h1 className="text-lg font-semibold">Amount Staked:</h1>
           <p className="text-xl font-bold">
-            {data ? data[0].stakedME + " $ME" : "loading..."}
+            {data ? data[data.length - 1].stakedME + " $ME" : "loading..."}
           </p>
           <h1 className="text-lg font-semibold mt-2">Total Staking Power:</h1>
           <p className="text-xl font-bold">
-            {data ? data[0].stakingPower : "loading..."}
+            {data ? data[data.length - 1].stakingPower : "loading..."}
           </p>
           <h1 className="text-lg font-semibold mt-2">Total Stakers:</h1>
           <p className="text-xl font-bold">
-            {data ? data[0].staker : "loading..."}
+            {data ? data[data.length - 1].staker : "loading..."}
           </p>
         </Card>
 
