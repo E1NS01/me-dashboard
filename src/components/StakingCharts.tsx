@@ -74,7 +74,12 @@ export const StakingCharts = ({
               tickFormatter={(value) => `${Math.floor(value / 1e6)}M`}
             />
             <CartesianGrid vertical={false} />
-            <Line dataKey="stakedME" fill="var(--color-stakedMe)" radius={4} />
+            <Line
+              dataKey="stakedME"
+              fill="var(--color-stakedMe)"
+              radius={4}
+              dot={false}
+            />
             <ChartTooltip content={<ChartTooltipContent />} />
           </LineChart>
         </ChartContainer>
@@ -103,6 +108,7 @@ export const StakingCharts = ({
               dataKey="stakingPower"
               fill="var(--color-stakingPower)"
               radius={4}
+              dot={false}
             />
             <ChartTooltip content={<ChartTooltipContent />} />
           </LineChart>
