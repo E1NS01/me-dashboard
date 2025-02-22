@@ -32,10 +32,24 @@ export const StakingCharts = ({
         <h1 className="text-lg font-semibold mb-2">Active Staker History</h1>
         <ChartContainer config={stakerConfig} className="w-full h-[200px]">
           <LineChart accessibilityLayer data={data ? data : undefined}>
-            <XAxis dataKey="timestamp" />
+            <XAxis
+              dataKey="timestamp"
+              tickFormatter={(value) =>
+                (value = new Date(value).toLocaleDateString("en-GB", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                }))
+              }
+            />
             <YAxis dataKey="staker" domain={activeStakerRange} />
             <CartesianGrid vertical={false} />
-            <Line dataKey="staker" fill="var(--color-staker)" radius={4} />
+            <Line
+              dataKey="staker"
+              fill="var(--color-staker)"
+              radius={4}
+              dot={false}
+            />
             <ChartTooltip content={<ChartTooltipContent />} />
           </LineChart>
         </ChartContainer>
@@ -45,7 +59,16 @@ export const StakingCharts = ({
         <h1 className="text-lg font-semibold mb-2">$ME Staked</h1>
         <ChartContainer config={stakingConfig} className="w-full h-[200px]">
           <LineChart accessibilityLayer data={data ? data : undefined}>
-            <XAxis dataKey="timestamp" />
+            <XAxis
+              dataKey="timestamp"
+              tickFormatter={(value) =>
+                (value = new Date(value).toLocaleDateString("en-GB", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                }))
+              }
+            />
             <YAxis
               domain={stakedMERange}
               tickFormatter={(value) => `${Math.floor(value / 1e6)}M`}
@@ -61,7 +84,16 @@ export const StakingCharts = ({
         <h1 className="text-lg font-semibold mb-2">Staking Power</h1>
         <ChartContainer config={stakingConfig} className="w-full h-[200px]">
           <LineChart accessibilityLayer data={data ? data : undefined}>
-            <XAxis dataKey="timestamp" />
+            <XAxis
+              dataKey="timestamp"
+              tickFormatter={(value) =>
+                (value = new Date(value).toLocaleDateString("en-GB", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                }))
+              }
+            />
             <YAxis
               domain={stakingPowerRange}
               tickFormatter={(value) => `${Math.floor(value / 1e6)}M`}
